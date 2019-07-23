@@ -17,20 +17,30 @@ const post3 = {
 const allPosts = [post1, post2, post3]
 
 module.exports = {
-    posts : function(req, res) {
-        res.send(allPosts)
+    posts : async function(req, res) {
+        Post.find().exec(function(err,posts){
+            res.send(posts)
+        })
+        try {
+            const posts = await Post.find()
+            res.send(posts)
+        }catch(err){
+            res.serverError(err.toString())
+        }
     },
     create : function(req ,res) {
-        const title = req.param('title')
-        const body = req.param('body')
-        console.log(title + " " + body)
-        const newPost = {
-            id : 4,
-            title : title,
-            body : body
-        }
-        allPosts.push(newPost)
-        res.end()
+        const title = req.body.title
+        const body = req.body.body
+        sails.log.debug('My title : ' + title + 'My body : ' + body)
+
+        Post.create({title : title , body : body}).exec(function(err) {
+            if (err) {
+                return res.serverError(err.toString())
+            }
+            console.log('Finish creating post object')
+            return res.redirect('/home')
+        })
+        // res.end()
     },
     findById : function(req , res) {
         const postId = req.param('postId')
@@ -42,5 +52,10 @@ module.exports = {
         }else {
             res.send('Fail to find post id : ' + postId)
         }
+    },
+    delete : async function(req,res){
+        const postId = req.param('postId')
+        await Post.destroy({id : postId})
+        res.send('Finish delete')
     }
 }
